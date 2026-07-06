@@ -4,12 +4,12 @@
 > Документ ничего не добавляет к аналитике — каждое правило снабжено ID источника.
 >
 > **Источники:**
-> - Бриф SCR-03 — [../analytics/design-brief/briefs/scr-03-client-schedule.md](../analytics/design-brief/briefs/scr-03-client-schedule.md)
-> - Бриф SCR-04 — [../analytics/design-brief/briefs/scr-04-client-slot-details.md](../analytics/design-brief/briefs/scr-04-client-slot-details.md)
+> - Бриф SCR-03 — [../analytics/design-brief/briefs/scr-03-client-schedule.md](../design-brief/briefs/scr-03-client-schedule.md)
+> - Бриф SCR-04 — [../analytics/design-brief/briefs/scr-04-client-slot-details.md](../design-brief/briefs/scr-04-client-slot-details.md)
 > - Контракт API — [../api/openapi.yaml](../api/openapi.yaml)
-> - Функциональные требования — [../analytics/requirements/functional-requirements-cooking.md](../analytics/requirements/functional-requirements-cooking.md)
-> - Решения заказчика — [../analytics/design-brief/design-decisions-cooking.md](../analytics/design-brief/design-decisions-cooking.md)
-> - ER-модель и матрица доступа — [../analytics/design/er-model-cooking.md](../analytics/design/er-model-cooking.md)
+> - Функциональные требования — [../analytics/requirements/functional-requirements-cooking.md](../requirements/functional-requirements-cooking.md)
+> - Решения заказчика — [../analytics/design-brief/design-decisions-cooking.md](../design-brief/design-decisions-cooking.md)
+> - ER-модель и матрица доступа — [../analytics/design/er-model-cooking.md](../design/er-model-cooking.md)
 
 ---
 

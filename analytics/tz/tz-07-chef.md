@@ -1,13 +1,13 @@
 # ТЗ-07 — Кабинет шефа: мои классы и участники
 
 > Модуль веб-приложения «Шеф-стол» (Spring Boot + веб-фронт). Роль — `CHEF`.
-> Источники: [SCR-09](../analytics/design-brief/briefs/scr-09-chef-my-classes.md),
-> [SCR-10](../analytics/design-brief/briefs/scr-10-chef-class-attendance.md),
+> Источники: [SCR-09](../design-brief/briefs/scr-09-chef-my-classes.md),
+> [SCR-10](../design-brief/briefs/scr-10-chef-class-attendance.md),
 > [openapi.yaml](../api/openapi.yaml),
-> [UC-06](../analytics/requirements/use-cases-cooking.md),
-> [ФТ](../analytics/requirements/functional-requirements-cooking.md),
-> [D-правила](../analytics/requirements/constraints-and-assumptions-cooking.md),
-> [журнал решений Р-…](../analytics/design-brief/design-decisions-cooking.md).
+> [UC-06](../requirements/use-cases-cooking.md),
+> [ФТ](../requirements/functional-requirements-cooking.md),
+> [D-правила](../requirements/constraints-and-assumptions-cooking.md),
+> [журнал решений Р-…](../design-brief/design-decisions-cooking.md).
 > Всё нижесказанное имеет ID источника; места, где источники молчат, помечены **[Пробел]**.
 
 ## 1. Назначение и охват
@@ -17,8 +17,8 @@
 
 | Экран | Назначение | Источник |
 |---|---|---|
-| **SCR-09 «Мои классы»** | Расписание текущего шефа: предстоящие и прошедшие классы; история прошедших показывается **вся, без обрезания по давности** (Р-16, п. 4). Домашний экран роли после входа (из SCR-02). Единственный переход — в SCR-10 | [SCR-09](../analytics/design-brief/briefs/scr-09-chef-my-classes.md), Р-16 |
-| **SCR-10 «Участники класса»** | Список участников конкретного класса с заметками об аллергии (ФТ-18) и экипировкой (ФТ-06); единственная точка проставления неявки `NO_SHOW` (ФТ-10, UC-06) | [SCR-10](../analytics/design-brief/briefs/scr-10-chef-class-attendance.md) |
+| **SCR-09 «Мои классы»** | Расписание текущего шефа: предстоящие и прошедшие классы; история прошедших показывается **вся, без обрезания по давности** (Р-16, п. 4). Домашний экран роли после входа (из SCR-02). Единственный переход — в SCR-10 | [SCR-09](../design-brief/briefs/scr-09-chef-my-classes.md), Р-16 |
+| **SCR-10 «Участники класса»** | Список участников конкретного класса с заметками об аллергии (ФТ-18) и экипировкой (ФТ-06); единственная точка проставления неявки `NO_SHOW` (ФТ-10, UC-06) | [SCR-10](../design-brief/briefs/scr-10-chef-class-attendance.md) |
 
 Вне охвата модуля: управление расписанием (только ADMIN — ФТ-03, UC-07), редактирование
 профиля/фото/био шефа (ADMIN, Р-05), снятие отметки `NO_SHOW` (ADMIN, D-11/ФТ-22 — экран

@@ -2,12 +2,12 @@
 
 > Модуль веб-приложения «Шеф-стол» (Spring Boot + веб-фронт; роли `CLIENT`/`CHEF`/`ADMIN`).
 > Документ ничего не добавляет к аналитике — каждое утверждение снабжено ID источника.
-> Источники: [бриф SCR-07](../analytics/design-brief/briefs/scr-07-client-review-form.md),
+> Источники: [бриф SCR-07](../design-brief/briefs/scr-07-client-review-form.md),
 > [openapi.yaml](../api/openapi.yaml),
-> [UC-04](../analytics/requirements/use-cases-cooking.md),
-> [ФТ-11, ФТ-12](../analytics/requirements/functional-requirements-cooking.md),
-> [D-05, D-09](../analytics/requirements/constraints-and-assumptions-cooking.md),
-> [Р-07, Р-10, Р-16](../analytics/design-brief/design-decisions-cooking.md).
+> [UC-04](../requirements/use-cases-cooking.md),
+> [ФТ-11, ФТ-12](../requirements/functional-requirements-cooking.md),
+> [D-05, D-09](../requirements/constraints-and-assumptions-cooking.md),
+> [Р-07, Р-10, Р-16](../design-brief/design-decisions-cooking.md).
 
 ## 1. Назначение и охват
 
@@ -27,7 +27,7 @@
 
 Бизнес-цель — **БТ-05**: дать клиентам возможность оценивать шефа и программу после класса как
 сигнал качества работы шефов (см.
-[business-requirements-cooking.md](../analytics/requirements/business-requirements-cooking.md)).
+[business-requirements-cooking.md](../requirements/business-requirements-cooking.md)).
 Комментарии — внутренний сигнал качества для студии (Р-07), оценка шефу — вход в публичный
 рейтинг (ФТ-12).
 
@@ -77,7 +77,7 @@
 
 ## 3. Интерфейс: экран и состояния (SCR-07)
 
-Источник — [бриф SCR-07](../analytics/design-brief/briefs/scr-07-client-review-form.md).
+Источник — [бриф SCR-07](../design-brief/briefs/scr-07-client-review-form.md).
 Роль — клиент; платформа — адаптивный веб (десктоп + мобильный браузер, НФТ-01).
 
 ### 3.1. Элементы экрана (бриф SCR-07, разд. 4)
@@ -260,20 +260,20 @@ ADMIN (Р-07, описание схемы `Review`).
 
 | ID | Источник | Разделы ТЗ |
 |---|---|---|
-| БТ-05 | [business-requirements-cooking.md](../analytics/requirements/business-requirements-cooking.md) | 1, 4.3 |
-| UC-04 | [use-cases-cooking.md](../analytics/requirements/use-cases-cooking.md) | 1, 2.1, 2.2, 4.1, 5, 7 (КП-1–КП-4) |
-| UC-10 | [use-cases-cooking.md](../analytics/requirements/use-cases-cooking.md) | 2.1 (автозавершение как предусловие) |
-| ФТ-11 | [functional-requirements-cooking.md](../analytics/requirements/functional-requirements-cooking.md) | 1, 2.1, 3.1, 5, 7 (КП-1, КП-6) |
-| ФТ-12 | [functional-requirements-cooking.md](../analytics/requirements/functional-requirements-cooking.md) | 1, 4.1, 5, 7 (КП-1, КП-5) |
-| ФТ-19 | [functional-requirements-cooking.md](../analytics/requirements/functional-requirements-cooking.md) | 6 (п. 1 — статусы брони) |
-| ФТ-22 / D-11 | [functional-requirements-cooking.md](../analytics/requirements/functional-requirements-cooking.md), [constraints-and-assumptions-cooking.md](../analytics/requirements/constraints-and-assumptions-cooking.md) | 6 (п. 6) |
-| D-05 | [constraints-and-assumptions-cooking.md](../analytics/requirements/constraints-and-assumptions-cooking.md) | 1, 2.2, 4.1, 5, 6 (п. 1–2), 7 (КП-2–КП-4) |
-| D-09 | [constraints-and-assumptions-cooking.md](../analytics/requirements/constraints-and-assumptions-cooking.md) | 2.1, 5, 7 (КП-1, КП-3) |
-| Р-07 | [design-decisions-cooking.md](../analytics/design-brief/design-decisions-cooking.md) | 1, 3.1 (эл. 6), 4.2, 4.3, 5, 7 (КП-5) |
-| Р-10 | [design-decisions-cooking.md](../analytics/design-brief/design-decisions-cooking.md) | 2.1, 5 |
-| Р-16 (п. 3, 6) | [design-decisions-cooking.md](../analytics/design-brief/design-decisions-cooking.md) | 1, 2.3, 3.1 (эл. 4), 4.1, 4.2, 5 |
-| SCR-07 | [scr-07-client-review-form.md](../analytics/design-brief/briefs/scr-07-client-review-form.md) | 1, 2, 3, 4 (реакции UI), 6, 7 (КП-6) |
-| SCR-06 | [бриф SCR-07, разд. 3](../analytics/design-brief/briefs/scr-07-client-review-form.md) | 2 (вход/выход экрана) |
+| БТ-05 | [business-requirements-cooking.md](../requirements/business-requirements-cooking.md) | 1, 4.3 |
+| UC-04 | [use-cases-cooking.md](../requirements/use-cases-cooking.md) | 1, 2.1, 2.2, 4.1, 5, 7 (КП-1–КП-4) |
+| UC-10 | [use-cases-cooking.md](../requirements/use-cases-cooking.md) | 2.1 (автозавершение как предусловие) |
+| ФТ-11 | [functional-requirements-cooking.md](../requirements/functional-requirements-cooking.md) | 1, 2.1, 3.1, 5, 7 (КП-1, КП-6) |
+| ФТ-12 | [functional-requirements-cooking.md](../requirements/functional-requirements-cooking.md) | 1, 4.1, 5, 7 (КП-1, КП-5) |
+| ФТ-19 | [functional-requirements-cooking.md](../requirements/functional-requirements-cooking.md) | 6 (п. 1 — статусы брони) |
+| ФТ-22 / D-11 | [functional-requirements-cooking.md](../requirements/functional-requirements-cooking.md), [constraints-and-assumptions-cooking.md](../requirements/constraints-and-assumptions-cooking.md) | 6 (п. 6) |
+| D-05 | [constraints-and-assumptions-cooking.md](../requirements/constraints-and-assumptions-cooking.md) | 1, 2.2, 4.1, 5, 6 (п. 1–2), 7 (КП-2–КП-4) |
+| D-09 | [constraints-and-assumptions-cooking.md](../requirements/constraints-and-assumptions-cooking.md) | 2.1, 5, 7 (КП-1, КП-3) |
+| Р-07 | [design-decisions-cooking.md](../design-brief/design-decisions-cooking.md) | 1, 3.1 (эл. 6), 4.2, 4.3, 5, 7 (КП-5) |
+| Р-10 | [design-decisions-cooking.md](../design-brief/design-decisions-cooking.md) | 2.1, 5 |
+| Р-16 (п. 3, 6) | [design-decisions-cooking.md](../design-brief/design-decisions-cooking.md) | 1, 2.3, 3.1 (эл. 4), 4.1, 4.2, 5 |
+| SCR-07 | [scr-07-client-review-form.md](../design-brief/briefs/scr-07-client-review-form.md) | 1, 2, 3, 4 (реакции UI), 6, 7 (КП-6) |
+| SCR-06 | [бриф SCR-07, разд. 3](../design-brief/briefs/scr-07-client-review-form.md) | 2 (вход/выход экрана) |
 | API: `createReview`, `getBookingReview`, `listReviews` | [openapi.yaml](../api/openapi.yaml) | 4, 7 |
 
 ### Открытые вопросы (к аналитику)

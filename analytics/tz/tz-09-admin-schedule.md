@@ -6,15 +6,15 @@
 > пробелы источников помечены явно.
 >
 > **Источники:**
-> - Бриф SCR-13 — [../analytics/design-brief/briefs/scr-13-admin-slots-schedule.md](../analytics/design-brief/briefs/scr-13-admin-slots-schedule.md)
-> - Бриф SCR-14 — [../analytics/design-brief/briefs/scr-14-admin-slot-form.md](../analytics/design-brief/briefs/scr-14-admin-slot-form.md)
-> - Бриф SCR-15 — [../analytics/design-brief/briefs/scr-15-admin-slot-cancel.md](../analytics/design-brief/briefs/scr-15-admin-slot-cancel.md)
+> - Бриф SCR-13 — [../analytics/design-brief/briefs/scr-13-admin-slots-schedule.md](../design-brief/briefs/scr-13-admin-slots-schedule.md)
+> - Бриф SCR-14 — [../analytics/design-brief/briefs/scr-14-admin-slot-form.md](../design-brief/briefs/scr-14-admin-slot-form.md)
+> - Бриф SCR-15 — [../analytics/design-brief/briefs/scr-15-admin-slot-cancel.md](../design-brief/briefs/scr-15-admin-slot-cancel.md)
 > - Контракт API — [../api/openapi.yaml](../api/openapi.yaml)
-> - Use cases (UC-03, UC-06, UC-07, UC-10) — [../analytics/requirements/use-cases-cooking.md](../analytics/requirements/use-cases-cooking.md)
-> - Функциональные требования — [../analytics/requirements/functional-requirements-cooking.md](../analytics/requirements/functional-requirements-cooking.md)
-> - Бизнес-правила D-xx — [../analytics/requirements/constraints-and-assumptions-cooking.md](../analytics/requirements/constraints-and-assumptions-cooking.md)
-> - Нефункциональные требования — [../analytics/requirements/non-functional-requirements-cooking.md](../analytics/requirements/non-functional-requirements-cooking.md)
-> - Решения заказчика Р-xx — [../analytics/design-brief/design-decisions-cooking.md](../analytics/design-brief/design-decisions-cooking.md)
+> - Use cases (UC-03, UC-06, UC-07, UC-10) — [../analytics/requirements/use-cases-cooking.md](../requirements/use-cases-cooking.md)
+> - Функциональные требования — [../analytics/requirements/functional-requirements-cooking.md](../requirements/functional-requirements-cooking.md)
+> - Бизнес-правила D-xx — [../analytics/requirements/constraints-and-assumptions-cooking.md](../requirements/constraints-and-assumptions-cooking.md)
+> - Нефункциональные требования — [../analytics/requirements/non-functional-requirements-cooking.md](../requirements/non-functional-requirements-cooking.md)
+> - Решения заказчика Р-xx — [../analytics/design-brief/design-decisions-cooking.md](../design-brief/design-decisions-cooking.md)
 
 ---
 

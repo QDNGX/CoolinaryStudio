@@ -9,9 +9,9 @@
 
 | Слой | Артефакт |
 |---|---|
-| Требования | [analytics/requirements/](../analytics/requirements/requirements-overview-cooking.md) — БТ / ФТ / НФТ / UC / US, бизнес-правила D-01…D-11 |
-| Домен и проектирование | [ER-модель + матрица доступа](../analytics/design/er-model-cooking.md), [sequence createBooking](../analytics/design/sequence-create-booking-cooking.md) |
-| Дизайн | [Реестр экранов SCR-01…SCR-17](../analytics/design-brief/screen-registry-cooking.md), [постановки briefs/](../analytics/design-brief/briefs/), [решения Р-01…Р-16](../analytics/design-brief/design-decisions-cooking.md) |
+| Требования | [analytics/requirements/](../requirements/requirements-overview-cooking.md) — БТ / ФТ / НФТ / UC / US, бизнес-правила D-01…D-11 |
+| Домен и проектирование | [ER-модель + матрица доступа](../design/er-model-cooking.md), [sequence createBooking](../design/sequence-create-booking-cooking.md) |
+| Дизайн | [Реестр экранов SCR-01…SCR-17](../design-brief/screen-registry-cooking.md), [постановки briefs/](../analytics/design-brief/briefs/), [решения Р-01…Р-16](../design-brief/design-decisions-cooking.md) |
 | Контракт API | [api/openapi.yaml](../api/openapi.yaml) + [трассировка](../api/README.md) |
 
 ТЗ не вводят новых требований: каждое правило снабжено ссылкой на ID первоисточника.

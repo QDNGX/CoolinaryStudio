@@ -2,12 +2,12 @@
 
 > Модуль экрана **SCR-08 «Профиль клиента»** веб-приложения «Шеф-стол» (роль CLIENT).
 > Документ ничего не добавляет к аналитике — каждое утверждение снабжено ID источника:
-> - постановка на дизайн — [SCR-08](../analytics/design-brief/briefs/scr-08-client-profile.md);
+> - постановка на дизайн — [SCR-08](../design-brief/briefs/scr-08-client-profile.md);
 > - API-контракт — [`GET /me`, `PATCH /me`](../api/openapi.yaml) (схемы `CurrentUser`, `ClientProfile`, `UpdateMeRequest`);
-> - функциональные требования — [ФТ-09, ФТ-18, ФТ-21](../analytics/requirements/functional-requirements-cooking.md);
-> - инварианты — [D-02](../analytics/requirements/constraints-and-assumptions-cooking.md);
-> - решения заказчика — [Р-06, Р-12, Р-16](../analytics/design-brief/design-decisions-cooking.md);
-> - модель данных — [User, ClientProfile](../analytics/design/er-model-cooking.md).
+> - функциональные требования — [ФТ-09, ФТ-18, ФТ-21](../requirements/functional-requirements-cooking.md);
+> - инварианты — [D-02](../requirements/constraints-and-assumptions-cooking.md);
+> - решения заказчика — [Р-06, Р-12, Р-16](../design-brief/design-decisions-cooking.md);
+> - модель данных — [User, ClientProfile](../design/er-model-cooking.md).
 >
 > Пробелы источников помечены явно: «на усмотрение разработки» / «на усмотрение дизайнера» /
 > «открытый вопрос».
@@ -235,19 +235,19 @@ Email и дисциплинарные/производные поля через
 
 | ID | Что фиксирует | Разделы ТЗ |
 |---|---|---|
-| SCR-08 ([бриф](../analytics/design-brief/briefs/scr-08-client-profile.md)) | Элементы, состояния, тон, свобода дизайнера | 1, 2, 3, 6, 7 |
-| [ФТ-09](../analytics/requirements/functional-requirements-cooking.md) | Счётчик +1, блок на 7 дней при ≥ 3, автосброс | 1, 2.3, 5 (БП-2), 6 (КС-3), 7 (КП-4, КП-5) |
-| [ФТ-18](../analytics/requirements/functional-requirements-cooking.md) | Заметка об аллергии — необязательное поле профиля | 1, 2.2, 5 (БП-5), 7 (КП-6, КП-8) |
-| [ФТ-21](../analytics/requirements/functional-requirements-cooking.md) | Молчаливое создание аккаунта; имя — одним полем после первого входа | 2.4, 5 (БП-4, ОВ-1) |
-| [ФТ-13](../analytics/requirements/functional-requirements-cooking.md) | Email — единый passwordless-логин | 1, 4.1, 5 (БП-1), 7 (КП-13) |
-| [ФТ-22](../analytics/requirements/functional-requirements-cooking.md) / D-11 | Снятие NO_SHOW админом → пересчёт полей клиента | 5 (БП-2), 6 (КС-4) |
-| [D-02](../analytics/requirements/constraints-and-assumptions-cooking.md) | 3 нарушения → блок 7 дней (`blockedUntil`), автосброс блока и счётчика | 1, 2.3, 5 (БП-2, БП-3), 6 (КС-3), 7 (КП-4, КП-5) |
-| [Р-06](../analytics/design-brief/design-decisions-cooking.md) | Счётчик показывается заранее — блокировка не сюрприз | 1, 2.3, 3.1, 4.1, 7 (КП-2) |
-| [Р-12](../analytics/design-brief/design-decisions-cooking.md) | Имя запрашивается после подтверждения кода, одним полем | 2.4, 5 (БП-4, ОВ-1), 6 (КС-8) |
-| [Р-16](../analytics/design-brief/design-decisions-cooking.md) | Email не редактируется (п. 1); заметка ≤ 500 символов (п. 3); контакт студии — на усмотрение дизайнера | 2.2, 3.1, 4, 5 (БП-1, БП-5), 6 (КС-1, КС-2), 7 (КП-7, КП-9) |
+| SCR-08 ([бриф](../design-brief/briefs/scr-08-client-profile.md)) | Элементы, состояния, тон, свобода дизайнера | 1, 2, 3, 6, 7 |
+| [ФТ-09](../requirements/functional-requirements-cooking.md) | Счётчик +1, блок на 7 дней при ≥ 3, автосброс | 1, 2.3, 5 (БП-2), 6 (КС-3), 7 (КП-4, КП-5) |
+| [ФТ-18](../requirements/functional-requirements-cooking.md) | Заметка об аллергии — необязательное поле профиля | 1, 2.2, 5 (БП-5), 7 (КП-6, КП-8) |
+| [ФТ-21](../requirements/functional-requirements-cooking.md) | Молчаливое создание аккаунта; имя — одним полем после первого входа | 2.4, 5 (БП-4, ОВ-1) |
+| [ФТ-13](../requirements/functional-requirements-cooking.md) | Email — единый passwordless-логин | 1, 4.1, 5 (БП-1), 7 (КП-13) |
+| [ФТ-22](../requirements/functional-requirements-cooking.md) / D-11 | Снятие NO_SHOW админом → пересчёт полей клиента | 5 (БП-2), 6 (КС-4) |
+| [D-02](../requirements/constraints-and-assumptions-cooking.md) | 3 нарушения → блок 7 дней (`blockedUntil`), автосброс блока и счётчика | 1, 2.3, 5 (БП-2, БП-3), 6 (КС-3), 7 (КП-4, КП-5) |
+| [Р-06](../design-brief/design-decisions-cooking.md) | Счётчик показывается заранее — блокировка не сюрприз | 1, 2.3, 3.1, 4.1, 7 (КП-2) |
+| [Р-12](../design-brief/design-decisions-cooking.md) | Имя запрашивается после подтверждения кода, одним полем | 2.4, 5 (БП-4, ОВ-1), 6 (КС-8) |
+| [Р-16](../design-brief/design-decisions-cooking.md) | Email не редактируется (п. 1); заметка ≤ 500 символов (п. 3); контакт студии — на усмотрение дизайнера | 2.2, 3.1, 4, 5 (БП-1, БП-5), 6 (КС-1, КС-2), 7 (КП-7, КП-9) |
 | [`GET /me`, `PATCH /me`](../api/openapi.yaml) (`CurrentUser`, `ClientProfile`, `UpdateMeRequest`) | Поля, лимиты, `readOnly`, `null` очищает заметку, коды 200/400/401 | 4, 6 (КС-1, КС-5, КС-6), 7 |
-| [ER-модель: User, ClientProfile](../analytics/design/er-model-cooking.md) | Структура данных, матрица доступа (дисциплинарные поля — только система) | 4.1, 5 (БП-2, ОВ-1) |
-| UC-01/A1 ([use cases](../analytics/requirements/use-cases-cooking.md)) | Отказ в брони при блокировке ссылается на профиль | 2.1, 2.3 |
+| [ER-модель: User, ClientProfile](../design/er-model-cooking.md) | Структура данных, матрица доступа (дисциплинарные поля — только система) | 4.1, 5 (БП-2, ОВ-1) |
+| UC-01/A1 ([use cases](../requirements/use-cases-cooking.md)) | Отказ в брони при блокировке ссылается на профиль | 2.1, 2.3 |
 
 ### Пробелы источников (свод)
 

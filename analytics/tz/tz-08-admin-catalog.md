@@ -4,14 +4,14 @@
 > Роли системы: CLIENT / CHEF / ADMIN; бэкенд — Spring Boot, фронт — веб (адаптив).
 >
 > Источники (всё в этом ТЗ прослеживается до ID; собственных решений документ не вводит):
-> - Брифы экранов: [SCR-11](../analytics/design-brief/briefs/scr-11-admin-programs-list.md),
->   [SCR-12](../analytics/design-brief/briefs/scr-12-admin-program-form.md)
+> - Брифы экранов: [SCR-11](../design-brief/briefs/scr-11-admin-programs-list.md),
+>   [SCR-12](../design-brief/briefs/scr-12-admin-program-form.md)
 > - Контракт API: [openapi.yaml](../api/openapi.yaml) — `listPrograms`, `createProgram`,
 >   `getProgram`, `updateProgram`; схемы `Program`, `ProgramInput`, `Error`
-> - Требования: [ФТ-01, ФТ-02](../analytics/requirements/functional-requirements-cooking.md),
->   [UC-07](../analytics/requirements/use-cases-cooking.md),
->   [US-08](../analytics/requirements/user-stories-cooking.md)
-> - Решения заказчика: [Р-04, Р-15, Р-16](../analytics/design-brief/design-decisions-cooking.md)
+> - Требования: [ФТ-01, ФТ-02](../requirements/functional-requirements-cooking.md),
+>   [UC-07](../requirements/use-cases-cooking.md),
+>   [US-08](../requirements/user-stories-cooking.md)
+> - Решения заказчика: [Р-04, Р-15, Р-16](../design-brief/design-decisions-cooking.md)
 
 ---
 
@@ -343,19 +343,19 @@
 
 | ID | Источник | Разделы ТЗ |
 |---|---|---|
-| SCR-11 | [бриф](../analytics/design-brief/briefs/scr-11-admin-programs-list.md) | 1, 2.1, 2.2, 3.1, 4.2, 6.2, 6.4, КП-10, КП-11 |
-| SCR-12 | [бриф](../analytics/design-brief/briefs/scr-12-admin-program-form.md) | 1, 2, 3.2, 4.3–4.5, 6.1, 6.3, 6.4, КП-1–КП-8, КП-12, КП-13 |
-| ФТ-01 | [functional-requirements](../analytics/requirements/functional-requirements-cooking.md) | 1, 2.1, 3.2, 4.3, 4.5, 5, КП-1, КП-2, КП-9 |
-| ФТ-02 (+примечание) | [functional-requirements](../analytics/requirements/functional-requirements-cooking.md) | 2.3, 3.1, 3.2, 4.1, 5, КП-3, КП-4 |
-| UC-07 | [use-cases](../analytics/requirements/use-cases-cooking.md) | 1, 2, 5, КП-1 |
-| US-08 | [user-stories](../analytics/requirements/user-stories-cooking.md) | 1, 2, 5 |
-| Р-04 | [design-decisions](../analytics/design-brief/design-decisions-cooking.md) | 2.3, 3.2, 4.5, 5, 6.1, КП-4–КП-6 |
-| Р-15 | [design-decisions](../analytics/design-brief/design-decisions-cooking.md) | 1, 4.2, 5, КП-11 |
-| Р-16 п.2 | [design-decisions](../analytics/design-brief/design-decisions-cooking.md) | 4.2, 4.4, 5, КП-9 |
-| Р-16 п.3 | [design-decisions](../analytics/design-brief/design-decisions-cooking.md) | 3.2, 4.1, 4.3, 5, КП-7 |
-| «Оставлены на усмотрение…» (тип кухни) | [design-decisions](../analytics/design-brief/design-decisions-cooking.md) | 3.2, 4.1, 6.4 |
+| SCR-11 | [бриф](../design-brief/briefs/scr-11-admin-programs-list.md) | 1, 2.1, 2.2, 3.1, 4.2, 6.2, 6.4, КП-10, КП-11 |
+| SCR-12 | [бриф](../design-brief/briefs/scr-12-admin-program-form.md) | 1, 2, 3.2, 4.3–4.5, 6.1, 6.3, 6.4, КП-1–КП-8, КП-12, КП-13 |
+| ФТ-01 | [functional-requirements](../requirements/functional-requirements-cooking.md) | 1, 2.1, 3.2, 4.3, 4.5, 5, КП-1, КП-2, КП-9 |
+| ФТ-02 (+примечание) | [functional-requirements](../requirements/functional-requirements-cooking.md) | 2.3, 3.1, 3.2, 4.1, 5, КП-3, КП-4 |
+| UC-07 | [use-cases](../requirements/use-cases-cooking.md) | 1, 2, 5, КП-1 |
+| US-08 | [user-stories](../requirements/user-stories-cooking.md) | 1, 2, 5 |
+| Р-04 | [design-decisions](../design-brief/design-decisions-cooking.md) | 2.3, 3.2, 4.5, 5, 6.1, КП-4–КП-6 |
+| Р-15 | [design-decisions](../design-brief/design-decisions-cooking.md) | 1, 4.2, 5, КП-11 |
+| Р-16 п.2 | [design-decisions](../design-brief/design-decisions-cooking.md) | 4.2, 4.4, 5, КП-9 |
+| Р-16 п.3 | [design-decisions](../design-brief/design-decisions-cooking.md) | 3.2, 4.1, 4.3, 5, КП-7 |
+| «Оставлены на усмотрение…» (тип кухни) | [design-decisions](../design-brief/design-decisions-cooking.md) | 3.2, 4.1, 6.4 |
 | `listPrograms` / `createProgram` / `getProgram` / `updateProgram`, `Program` / `ProgramInput` / `Error` | [openapi.yaml](../api/openapi.yaml) | 4, 6.3, КП-1, КП-2, КП-5, КП-7–КП-9, КП-14 |
-| ФТ-13 (контекст 401) | [functional-requirements](../analytics/requirements/functional-requirements-cooking.md) | 4.3 |
+| ФТ-13 (контекст 401) | [functional-requirements](../requirements/functional-requirements-cooking.md) | 4.3 |
 
 ### Явно помеченные пробелы источников (на усмотрение/уточнение разработки)
 

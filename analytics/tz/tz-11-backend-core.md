@@ -7,16 +7,16 @@
 > не зафиксированный в источниках, помечен «на усмотрение разработки» с рекомендацией.
 >
 > **Источники:**
-> - ER-модель и матрица доступа — [../analytics/design/er-model-cooking.md](../analytics/design/er-model-cooking.md)
-> - Sequence-диаграмма создания брони — [../analytics/design/sequence-create-booking-cooking.md](../analytics/design/sequence-create-booking-cooking.md)
-> - Доменная модель (первоисточник) — [../analytics/domain/domain-model-cooking.md](../analytics/domain/domain-model-cooking.md)
-> - Инварианты D-01…D-11 — [../analytics/requirements/constraints-and-assumptions-cooking.md](../analytics/requirements/constraints-and-assumptions-cooking.md)
-> - НФТ-01…НФТ-07 — [../analytics/requirements/non-functional-requirements-cooking.md](../analytics/requirements/non-functional-requirements-cooking.md)
-> - Функциональные требования — [../analytics/requirements/functional-requirements-cooking.md](../analytics/requirements/functional-requirements-cooking.md)
-> - Use cases (UC-09, UC-10 и др.) — [../analytics/requirements/use-cases-cooking.md](../analytics/requirements/use-cases-cooking.md)
+> - ER-модель и матрица доступа — [../analytics/design/er-model-cooking.md](../design/er-model-cooking.md)
+> - Sequence-диаграмма создания брони — [../analytics/design/sequence-create-booking-cooking.md](../design/sequence-create-booking-cooking.md)
+> - Доменная модель (первоисточник) — [../analytics/domain/domain-model-cooking.md](../domain/domain-model-cooking.md)
+> - Инварианты D-01…D-11 — [../analytics/requirements/constraints-and-assumptions-cooking.md](../requirements/constraints-and-assumptions-cooking.md)
+> - НФТ-01…НФТ-07 — [../analytics/requirements/non-functional-requirements-cooking.md](../requirements/non-functional-requirements-cooking.md)
+> - Функциональные требования — [../analytics/requirements/functional-requirements-cooking.md](../requirements/functional-requirements-cooking.md)
+> - Use cases (UC-09, UC-10 и др.) — [../analytics/requirements/use-cases-cooking.md](../requirements/use-cases-cooking.md)
 > - Контракт API — [../api/openapi.yaml](../api/openapi.yaml)
-> - Email-шаблоны EML-01…EML-04 — [../analytics/design-brief/screen-registry-cooking.md](../analytics/design-brief/screen-registry-cooking.md)
-> - Решения заказчика Р-01…Р-16 — [../analytics/design-brief/design-decisions-cooking.md](../analytics/design-brief/design-decisions-cooking.md)
+> - Email-шаблоны EML-01…EML-04 — [../analytics/design-brief/screen-registry-cooking.md](../design-brief/screen-registry-cooking.md)
+> - Решения заказчика Р-01…Р-16 — [../analytics/design-brief/design-decisions-cooking.md](../design-brief/design-decisions-cooking.md)
 
 ---
 
@@ -46,7 +46,7 @@ web push (БТ-08 — вне скоупа MVP).
 
 ## 2. Модель данных
 
-Схема — по ER-модели ([er-model-cooking.md](../analytics/design/er-model-cooking.md)); типы —
+Схема — по ER-модели ([er-model-cooking.md](../design/er-model-cooking.md)); типы —
 по доменной модели; лимиты и форматы сверены с [openapi.yaml](../api/openapi.yaml).
 Все первичные ключи — UUID. Именование таблиц/колонок — на усмотрение разработки.
 
@@ -194,7 +194,7 @@ web push (БТ-08 — вне скоупа MVP).
 
 ## 3. Матрица доступа: кто читает / кто меняет
 
-Перенесено из ER-модели ([er-model-cooking.md, «Матрица доступа»](../analytics/design/er-model-cooking.md#матрица-доступа-кто-читает--кто-меняет));
+Перенесено из ER-модели ([er-model-cooking.md, «Матрица доступа»](../design/er-model-cooking.md#матрица-доступа-кто-читает--кто-меняет));
 бэкенд обязан проверять эти права на каждой операции (см. §7). Обозначения: **C** — создаёт,
 **U** — изменяет, **R** — читает, **—** — не имеет доступа. «Система» — автоматические переходы
 без действия пользователя (транзакции, планировщик).
@@ -225,7 +225,7 @@ web push (БТ-08 — вне скоупа MVP).
 
 ## 4. Инварианты и серверная логика
 
-По каждому инварианту: формулировка (из [constraints-and-assumptions-cooking.md](../analytics/requirements/constraints-and-assumptions-cooking.md)),
+По каждому инварианту: формулировка (из [constraints-and-assumptions-cooking.md](../requirements/constraints-and-assumptions-cooking.md)),
 где срабатывает (операция API из [openapi.yaml](../api/openapi.yaml) или процесс §5),
 как реализуется.
 
@@ -270,7 +270,7 @@ web push (БТ-08 — вне скоупа MVP).
 - **Где:** `POST /bookings` (`createBooking`, UC-01) — и симметрично возврат места при отменах
   (отмена клиентом/каскад отмены слота увеличивают `freeSpots` в той же транзакции — «кэш,
   пересчитывается транзакционно при брони/отмене», доменная модель).
-- **Как** — строго по [sequence-диаграмме](../analytics/design/sequence-create-booking-cooking.md):
+- **Как** — строго по [sequence-диаграмме](../design/sequence-create-booking-cooking.md):
   1. Транзакция: чтение слота (`status`, `freeSpots`, `rentalSetsAvailable`,
      `rentalPricePerSet`, `version`).
   2. `status = CANCELLED_BY_STUDIO` → ROLLBACK, **410** (D-04, см. ниже).
@@ -416,7 +416,7 @@ web push (БТ-08 — вне скоупа MVP).
 
 ## 6. Email-уведомления
 
-Реестр писем — [screen-registry-cooking.md, раздел EML](../analytics/design-brief/screen-registry-cooking.md#объекты-дизайна-вне-экранов-email-шаблоны).
+Реестр писем — [screen-registry-cooking.md, раздел EML](../design-brief/screen-registry-cooking.md#объекты-дизайна-вне-экранов-email-шаблоны).
 Вёрстка и тон писем — отдельный дизайн-пакет (там же); здесь — серверные триггеры и
 обязательное содержимое.
 

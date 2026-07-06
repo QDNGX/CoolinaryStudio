@@ -1,12 +1,12 @@
 # ТЗ-04 — Мои брони и отмена брони
 
 > Модуль клиента веб-приложения «Шеф-стол». Экран **SCR-06** «Мои брони».
-> Источники: [бриф SCR-06](../analytics/design-brief/briefs/scr-06-client-my-bookings.md),
+> Источники: [бриф SCR-06](../design-brief/briefs/scr-06-client-my-bookings.md),
 > [openapi.yaml](../api/openapi.yaml) (операции `listMyBookings`, `cancelBooking`, `getBookingReview`),
-> [UC-02](../analytics/requirements/use-cases-cooking.md#uc-02--клиент-отменяет-бронь),
-> [ФТ-08, ФТ-09, ФТ-19](../analytics/requirements/functional-requirements-cooking.md),
-> [D-01, D-02](../analytics/requirements/constraints-and-assumptions-cooking.md),
-> [Р-06, Р-14, Р-16](../analytics/design-brief/design-decisions-cooking.md).
+> [UC-02](../requirements/use-cases-cooking.md#uc-02--клиент-отменяет-бронь),
+> [ФТ-08, ФТ-09, ФТ-19](../requirements/functional-requirements-cooking.md),
+> [D-01, D-02](../requirements/constraints-and-assumptions-cooking.md),
+> [Р-06, Р-14, Р-16](../design-brief/design-decisions-cooking.md).
 > ТЗ ничего не добавляет к источникам; всё, что источниками не зафиксировано, помечено
 > «на усмотрение разработки».
 
@@ -268,20 +268,20 @@
 
 | ID | Источник | Раздел ТЗ |
 |---|---|---|
-| SCR-06 | [бриф](../analytics/design-brief/briefs/scr-06-client-my-bookings.md) | 1, 2, 3 |
-| UC-02 | [use-cases](../analytics/requirements/use-cases-cooking.md) | 2.2–2.3, 3.2, 5, 7 (КП-1–КП-4) |
-| ФТ-08 | [функциональные требования](../analytics/requirements/functional-requirements-cooking.md) | 2.2–2.3, 4.2, 5, 7 (КП-1, КП-2) |
-| ФТ-09 | [функциональные требования](../analytics/requirements/functional-requirements-cooking.md) | 2.3, 4.2, 5, 7 (КП-2, КП-3) |
-| ФТ-19 | [функциональные требования](../analytics/requirements/functional-requirements-cooking.md) | 3.2, 7 (КП-5) |
-| ФТ-04, ФТ-15 | [функциональные требования](../analytics/requirements/functional-requirements-cooking.md) | 2.4, 3.1, 7 (КП-5, КП-6) |
-| ФТ-11 / D-05 | [функциональные требования](../analytics/requirements/functional-requirements-cooking.md), [constraints](../analytics/requirements/constraints-and-assumptions-cooking.md) | 2.6, 4.1 (`hasReview`) |
-| ФТ-13 | [функциональные требования](../analytics/requirements/functional-requirements-cooking.md) | 4.1–4.3 (реакция на `401`) |
-| D-01 | [constraints](../analytics/requirements/constraints-and-assumptions-cooking.md) | 2.2–2.3, 4.2, 5, 6, 7 (КП-1–КП-4) |
-| D-02 | [constraints](../analytics/requirements/constraints-and-assumptions-cooking.md) | 2.3, 3.4, 5, 7 (КП-3) |
-| D-06 | [constraints](../analytics/requirements/constraints-and-assumptions-cooking.md) | 3.1, 4.1 (`rentalPriceSnapshot`) |
-| Р-06 | [журнал решений](../analytics/design-brief/design-decisions-cooking.md) | 2.3, 3.4, 5, 7 (КП-2–КП-4) |
-| Р-14 | [журнал решений](../analytics/design-brief/design-decisions-cooking.md) | 2.5, 3.2, 5, 7 (КП-5) |
-| Р-16 (пп. 4, 6) | [журнал решений](../analytics/design-brief/design-decisions-cooking.md) | 1, 2.1, 2.6, 3.1, 4.1, 4.3, 7 (КП-5) |
+| SCR-06 | [бриф](../design-brief/briefs/scr-06-client-my-bookings.md) | 1, 2, 3 |
+| UC-02 | [use-cases](../requirements/use-cases-cooking.md) | 2.2–2.3, 3.2, 5, 7 (КП-1–КП-4) |
+| ФТ-08 | [функциональные требования](../requirements/functional-requirements-cooking.md) | 2.2–2.3, 4.2, 5, 7 (КП-1, КП-2) |
+| ФТ-09 | [функциональные требования](../requirements/functional-requirements-cooking.md) | 2.3, 4.2, 5, 7 (КП-2, КП-3) |
+| ФТ-19 | [функциональные требования](../requirements/functional-requirements-cooking.md) | 3.2, 7 (КП-5) |
+| ФТ-04, ФТ-15 | [функциональные требования](../requirements/functional-requirements-cooking.md) | 2.4, 3.1, 7 (КП-5, КП-6) |
+| ФТ-11 / D-05 | [функциональные требования](../requirements/functional-requirements-cooking.md), [constraints](../requirements/constraints-and-assumptions-cooking.md) | 2.6, 4.1 (`hasReview`) |
+| ФТ-13 | [функциональные требования](../requirements/functional-requirements-cooking.md) | 4.1–4.3 (реакция на `401`) |
+| D-01 | [constraints](../requirements/constraints-and-assumptions-cooking.md) | 2.2–2.3, 4.2, 5, 6, 7 (КП-1–КП-4) |
+| D-02 | [constraints](../requirements/constraints-and-assumptions-cooking.md) | 2.3, 3.4, 5, 7 (КП-3) |
+| D-06 | [constraints](../requirements/constraints-and-assumptions-cooking.md) | 3.1, 4.1 (`rentalPriceSnapshot`) |
+| Р-06 | [журнал решений](../design-brief/design-decisions-cooking.md) | 2.3, 3.4, 5, 7 (КП-2–КП-4) |
+| Р-14 | [журнал решений](../design-brief/design-decisions-cooking.md) | 2.5, 3.2, 5, 7 (КП-5) |
+| Р-16 (пп. 4, 6) | [журнал решений](../design-brief/design-decisions-cooking.md) | 1, 2.1, 2.6, 3.1, 4.1, 4.3, 7 (КП-5) |
 | `GET /me/bookings` | [openapi.yaml](../api/openapi.yaml), `listMyBookings` | 4.1 |
 | `POST /bookings/{bookingId}/cancel` | [openapi.yaml](../api/openapi.yaml), `cancelBooking` | 4.2 |
 | `GET /bookings/{bookingId}/review` | [openapi.yaml](../api/openapi.yaml), `getBookingReview` | 4.3 |

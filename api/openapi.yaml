@@ -1,0 +1,1447 @@
+openapi: 3.0.3
+info:
+  title: Шеф-стол API
+  version: 0.1.0
+  description: |
+    REST API веб-приложения кулинарной студии «Шеф-стол» (БТ-01: фронт + бэкенд Spring Boot,
+    три роли — CLIENT / CHEF / ADMIN).
+
+    Спецификация выведена из аналитических артефактов и ничего к ним не добавляет:
+    - ER-модель и матрица доступа — `analytics/design/er-model-cooking.md`
+    - Sequence-диаграмма создания брони (ветки 201/409/410) — `analytics/design/sequence-create-booking-cooking.md`
+    - Функциональные требования ФТ-01…ФТ-25, use cases UC-01…UC-10 — `analytics/requirements/`
+    - Решения заказчика Р-01…Р-16 — `analytics/design-brief/design-decisions-cooking.md`
+
+    **Аутентификация** — passwordless (ФТ-13, UC-05): email + одноразовый шестизначный код
+    (срок 10 минут, ≤ 5 попыток, повторная отправка не чаще 1 раза в 60 секунд — НФТ-04/Р-09).
+    Успешная проверка кода возвращает bearer-токен. Гостевой доступ (Р-16): расписание,
+    карточка слота, каталог программ и настройки студии читаются без входа.
+
+    **Производные поля** (`freeSpots`, `lateCancelCount`, `blockedUntil`, `averageRating`,
+    `reviewsCount`, `isLateCancellation`, статусы `COMPLETED`) присутствуют только в ответах —
+    их меняет система по инвариантам D-01…D-11, ни одна роль напрямую (матрица доступа ER-модели).
+  contact:
+    name: Студия «Шеф-стол»
+
+servers:
+  - url: http://localhost:8080/api
+    description: Локальная среда разработки (Spring Boot)
+
+tags:
+  - name: auth
+    description: Passwordless-вход по email и одноразовому коду (UC-05, ФТ-13, ФТ-21)
+  - name: me
+    description: Профиль текущего пользователя (ФТ-18, Р-06, Р-12)
+  - name: catalog
+    description: Каталог программ — чтение для всех, изменение только ADMIN (ФТ-01, UC-07)
+  - name: schedule
+    description: Слоты расписания — витрина для клиента и управление для ADMIN (ФТ-03/04/20, UC-03/07)
+  - name: bookings
+    description: Брони — создание/отмена клиентом, NO_SHOW шефом, снятие NO_SHOW админом (UC-01/02/06)
+  - name: reviews
+    description: Отзывы по завершённым броням (UC-04, D-05, Р-07)
+  - name: chefs
+    description: Аккаунты и профили шефов — ведёт ADMIN (UC-08, ФТ-14/25)
+  - name: studio
+    description: Настройки студии — синглтон (ФТ-17)
+
+paths:
+  # ─────────────────────────── AUTH ───────────────────────────
+  /auth/code/request:
+    post:
+      tags: [auth]
+      summary: Запросить одноразовый код входа на email
+      description: |
+        Шаг 1–2 UC-05. Система отправляет шестизначный код на указанный email (EML-01).
+        Неизвестный email не является ошибкой — он обрабатывается как вход нового клиента
+        (ФТ-21, Р-01), поэтому ответ не раскрывает, существует ли аккаунт.
+        Повторная отправка — не чаще 1 раза в 60 секунд (НФТ-04/Р-09).
+      operationId: requestAuthCode
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCodeRequest'
+      responses:
+        '202':
+          description: Код отправлен (или будет отправлен) на указанный email
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          description: Повторный запрос кода раньше, чем через 60 секунд (НФТ-04)
+          headers:
+            Retry-After:
+              description: Секунд до возможности повторной отправки
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/code/verify:
+    post:
+      tags: [auth]
+      summary: Подтвердить код и открыть сессию
+      description: |
+        Шаги 3–5 UC-05. Проверка соответствия кода, срока действия (10 минут) и числа
+        попыток (≤ 5 — НФТ-04). Успех — bearer-токен и данные пользователя.
+        Если `User` с этим email не существовал — система молчаливо создаёт аккаунт клиента
+        (ФТ-21, Р-01) и возвращает `isNewUser: true`; интерфейс сразу запрашивает имя одним
+        полем (Р-12, `PATCH /me`).
+      operationId: verifyAuthCode
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthCodeVerify'
+      responses:
+        '200':
+          description: Код верен — сессия установлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResult'
+        '400':
+          description: |
+            Код не подошёл. `code` уточняет причину: `INVALID_CODE` — неверный код (попытка
+            учтена), `CODE_EXPIRED` — истекли 10 минут, `ATTEMPTS_EXCEEDED` — исчерпаны
+            5 попыток. В двух последних случаях нужно запросить новый код (UC-05/A1).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Завершить сессию
+      description: Инвалидация текущего токена. Длительность сессии — открытый вопрос уровня интерфейса (см. design-decisions), на контракт не влияет.
+      operationId: logout
+      responses:
+        '204':
+          description: Сессия завершена
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ─────────────────────────── ME ───────────────────────────
+  /me:
+    get:
+      tags: [me]
+      summary: Профиль текущего пользователя
+      description: |
+        Возвращает `User` + профиль роли. Клиент видит свои дисциплинарные поля
+        `lateCancelCount`/`blockedUntil` (Р-06: блокировка не должна быть сюрпризом),
+        но не меняет их — только система (D-02). SCR-08.
+      operationId: getMe
+      responses:
+        '200':
+          description: Данные текущего пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      tags: [me]
+      summary: Обновить свой профиль (имя, заметка об аллергии)
+      description: |
+        Клиент меняет только `name` (заполняется одним вопросом после первого входа —
+        ФТ-21/Р-12) и `allergyNote` (ФТ-18, ≤ 500 символов — Р-16). Email не редактируется
+        никем (Р-16). Дисциплинарные и производные поля через этот метод недоступны.
+      operationId: updateMe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMeRequest'
+      responses:
+        '200':
+          description: Профиль обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUser'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /me/bookings:
+    get:
+      tags: [bookings]
+      summary: Мои брони (клиент)
+      description: |
+        Список броней текущего клиента, вся история без обрезания (Р-16). Для каждой брони —
+        слот, статус (включая `NO_SHOW` с пояснением — Р-14), признак поздней отмены и ссылка
+        на отзыв, если он оставлен (Р-16: отзыв виден read-only). SCR-06.
+      operationId: listMyBookings
+      responses:
+        '200':
+          description: Брони клиента, от новых к старым
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ─────────────────────────── CATALOG ───────────────────────────
+  /programs:
+    get:
+      tags: [catalog]
+      summary: Каталог программ
+      description: Чтение доступно всем ролям и гостю (Р-16). Архивации в MVP нет — каталог только растёт (Р-15).
+      operationId: listPrograms
+      security: []
+      responses:
+        '200':
+          description: Все программы каталога
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Program'
+    post:
+      tags: [catalog]
+      summary: Создать программу (ADMIN)
+      description: ФТ-01, UC-07, SCR-12. Признак `requiresComplexEquipment` снижает лимит группы с 12 до 8 — только для слотов, созданных после изменения (ФТ-02, Р-04).
+      operationId: createProgram
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramInput'
+      responses:
+        '201':
+          description: Программа создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /programs/{programId}:
+    parameters:
+      - $ref: '#/components/parameters/programId'
+    get:
+      tags: [catalog]
+      summary: Программа по id
+      operationId: getProgram
+      security: []
+      responses:
+        '200':
+          description: Программа
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [catalog]
+      summary: Редактировать программу (ADMIN)
+      description: ФТ-01. Смена `requiresComplexEquipment` не трогает вместимость уже созданных слотов (Р-04).
+      operationId: updateProgram
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProgramInput'
+      responses:
+        '200':
+          description: Программа обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Program'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─────────────────────────── SCHEDULE ───────────────────────────
+  /slots:
+    get:
+      tags: [schedule]
+      summary: Расписание слотов
+      description: |
+        Витрина для клиента и гостя (SCR-03, Р-16): по умолчанию слоты на ближайшие 7 дней
+        от текущего момента, фильтр по датам для более длинного периода (ФТ-20, Р-11 —
+        других фильтров в MVP нет). Пустой список — empty state «Пока нет доступных классов».
+        ADMIN использует тот же метод для сетки SCR-13 (включая отменённые и завершённые —
+        параметр `status`).
+      operationId: listSlots
+      security: []
+      parameters:
+        - name: dateFrom
+          in: query
+          description: Начало периода (по умолчанию — текущий момент)
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          description: Конец периода (по умолчанию — dateFrom + 7 дней, ФТ-20)
+          schema:
+            type: string
+            format: date
+        - name: status
+          in: query
+          description: Фильтр по статусу; гостю и клиенту по умолчанию отдаются только `SCHEDULED`
+          schema:
+            $ref: '#/components/schemas/SlotStatus'
+      responses:
+        '200':
+          description: Слоты периода, отсортированы по времени начала
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SlotSummary'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+    post:
+      tags: [schedule]
+      summary: Создать слот (ADMIN)
+      description: |
+        ФТ-03, UC-07, SCR-14. Длительность фиксированная — 180 минут, в запросе не передаётся.
+        Вместимость ограничена программой: 12 по умолчанию, 8 при `requiresComplexEquipment`
+        (ФТ-02). Слот, пересекающийся по времени с другим слотом того же шефа в статусе
+        `SCHEDULED`, отклоняется с указанием конфликтующего слота (ФТ-24, D-10).
+        Редактирования слота нет — исправление = отмена + создание заново (Р-03).
+      operationId: createSlot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlotCreateRequest'
+      responses:
+        '201':
+          description: Слот создан и доступен клиентам
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotDetails'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Пересечение по времени со слотом того же шефа (D-10); `details.conflictingSlotId` указывает конфликтующий слот
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /slots/{slotId}:
+    parameters:
+      - $ref: '#/components/parameters/slotId'
+    get:
+      tags: [schedule]
+      summary: Карточка слота
+      description: |
+        Всё для решения о брони (SCR-04, доступно гостю — Р-16): программа с блюдами и фото,
+        шеф с агрегатным рейтингом (ФТ-12, US-06 — публичен только агрегат, Р-07), свободные
+        места, прокат и цена.
+      operationId: getSlot
+      security: []
+      responses:
+        '200':
+          description: Слот с деталями программы и шефа
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotDetails'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /slots/{slotId}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/slotId'
+    post:
+      tags: [schedule]
+      summary: Отменить слот с указанием причины (ADMIN)
+      description: |
+        UC-03, ФТ-04, SCR-15. `status → CANCELLED_BY_STUDIO`, причина обязательна (≤ 300
+        символов — Р-16). Связанные подтверждённые брони каскадно переходят в
+        `CANCELLED_BY_STUDIO`; затронутым клиентам отправляется email с причиной (ФТ-15,
+        EML-02) — best-effort, сбой отправки не блокирует операцию (НФТ-03/D-07).
+        Слот навсегда недоступен для новых броней (D-04).
+      operationId: cancelSlot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlotCancelRequest'
+      responses:
+        '200':
+          description: Слот отменён, брони каскадно отменены, уведомления поставлены в отправку
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlotDetails'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Слот уже не в статусе `SCHEDULED` (отменён ранее или завершён — D-09)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /slots/{slotId}/bookings:
+    get:
+      tags: [bookings]
+      summary: Брони слота — участники класса (CHEF своего слота, ADMIN)
+      description: |
+        Шеф видит участников своего класса с заметками об аллергии (ФТ-18, SCR-10) и отмечает
+        неявку после начала класса. Администратор использует тот же список для снятия
+        ошибочной отметки `NO_SHOW` (ФТ-22, SCR-13). Тексты отзывов сюда не входят (Р-07).
+      operationId: listSlotBookings
+      parameters:
+        - $ref: '#/components/parameters/slotId'
+      responses:
+        '200':
+          description: Брони слота с данными участников
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ParticipantBooking'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Роль CLIENT либо шеф чужого слота
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─────────────────────────── BOOKINGS ───────────────────────────
+  /bookings:
+    post:
+      tags: [bookings]
+      summary: Создать бронь (CLIENT)
+      description: |
+        UC-01, операция `createBooking` из sequence-диаграммы — единственная операция, где
+        пересекаются инварианты D-03 и D-04, поэтому три исхода: **201** — место
+        зарезервировано; **409** — конфликт (мест нет или параллельная бронь успела раньше;
+        внутри бэкенда ровно один retry — D-03/НФТ-02); **410** — слот отменён студией
+        безвозвратно, повторять запрос бессмысленно (D-04).
+
+        При `equipmentChoice = RENTAL` текущая цена проката фиксируется в
+        `rentalPriceSnapshot` и задним числом не меняется (ФТ-06, D-06/НФТ-07), прокатный
+        фонд уменьшается на 1. `freeSpots` пересчитывается в той же транзакции (ФТ-07, D-03).
+        Напоминания за 24ч и 2ч планируются отдельным процессом и на исход не влияют (D-07).
+      operationId: createBooking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreateRequest'
+      responses:
+        '201':
+          description: Место ваше — бронь `CONFIRMED`; напоминания придут за 24ч и 2ч (ФТ-16)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Активна блокировка клиента (D-02) — в ответе дата разблокировки `blockedUntil`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockedError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: |
+            «Места закончились» или «место только что заняли» (конфликт оптимистичной
+            блокировки после retry — D-03); для `RENTAL` — также исчерпание прокатного фонда.
+            Состояние может измениться — можно выбрать другой класс (SCR-03).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '410':
+          description: Слот в `CANCELLED_BY_STUDIO` — бронирование запрещено навсегда (D-04); в `details.cancellationReason` — причина отмены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /bookings/{bookingId}/cancel:
+    post:
+      tags: [bookings]
+      summary: Отменить свою бронь (CLIENT)
+      description: |
+        UC-02, ФТ-08, SCR-06. Система фиксирует `cancelledAt` и вычисляет
+        `isLateCancellation = slot.startAt − cancelledAt < 6ч` (D-01). Поздняя отмена
+        увеличивает `lateCancelCount`; на 3-м нарушении выставляется блок на 7 дней (ФТ-09,
+        D-02). Предупреждение о «поздней» отмене интерфейс показывает до подтверждения (Р-06).
+      operationId: cancelBooking
+      parameters:
+        - $ref: '#/components/parameters/bookingId'
+      responses:
+        '200':
+          description: Бронь отменена (`CANCELLED_BY_CLIENT`); в ответе — `isLateCancellation`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Бронь принадлежит другому клиенту
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Бронь не в статусе `CONFIRMED` (уже отменена или класс завершён)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /bookings/{bookingId}/no-show:
+    post:
+      tags: [bookings]
+      summary: Отметить неявку (CHEF своего класса)
+      description: |
+        UC-06, ФТ-10, SCR-10. Доступно только шефу, ведущему класс, и только после
+        `slot.startAt` (Р-13, крайнего срока нет). `Booking.status → NO_SHOW`,
+        `lateCancelCount` клиента +1; при достижении 3 — блок на 7 дней (D-02).
+        Обратного действия у шефа нет — снятие только через администратора (D-11).
+      operationId: markNoShow
+      parameters:
+        - $ref: '#/components/parameters/bookingId'
+      responses:
+        '200':
+          description: Неявка зафиксирована
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantBooking'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Не шеф этого класса
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Класс ещё не начался (Р-13) либо бронь не в подходящем статусе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags: [bookings]
+      summary: Снять ошибочную отметку неявки (ADMIN)
+      description: |
+        ФТ-22, D-11, UC-06/A1, SCR-13. Статус брони → `COMPLETED`, `lateCancelCount` клиента
+        −1, блокировка снимается, если условие перестаёт выполняться. У шефа этого действия нет.
+      operationId: revokeNoShow
+      parameters:
+        - $ref: '#/components/parameters/bookingId'
+      responses:
+        '200':
+          description: Отметка снята, дисциплинарные поля клиента пересчитаны
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipantBooking'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Бронь не в статусе `NO_SHOW`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ─────────────────────────── REVIEWS ───────────────────────────
+  /bookings/{bookingId}/review:
+    parameters:
+      - $ref: '#/components/parameters/bookingId'
+    post:
+      tags: [reviews]
+      summary: Оставить отзыв по завершённой брони (CLIENT)
+      description: |
+        UC-04, ФТ-11, SCR-07. Доступно только когда `slot.status = COMPLETED`, бронь не
+        отменена и отзыва на эту бронь ещё нет (один отзыв на бронь — D-05). После создания
+        отзыв не редактируется; агрегаты шефа (`averageRating`/`reviewsCount`)
+        пересчитываются системой (ФТ-12).
+      operationId: createReview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreateRequest'
+      responses:
+        '201':
+          description: Отзыв сохранён, рейтинг шефа обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Бронь принадлежит другому клиенту
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Отзыв на эту бронь уже существует (D-05, UC-04/A2)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Класс не завершён или бронь отменена (D-05, UC-04/A1)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags: [reviews]
+      summary: Прочитать свой отзыв по брони (CLIENT — read-only)
+      description: Р-16 — отправленный отзыв клиент видит read-only из «Моих броней»; редактирование не предусмотрено.
+      operationId: getBookingReview
+      responses:
+        '200':
+          description: Отзыв по брони
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Бронь принадлежит другому клиенту
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /reviews:
+    get:
+      tags: [reviews]
+      summary: Все отзывы с текстами комментариев (ADMIN)
+      description: |
+        Р-07: текстовые комментарии — внутренний сигнал качества (БТ-05), их читает только
+        администратор. Публичен только агрегат (рейтинг шефа + число отзывов в карточке
+        класса). Шеф тексты не видит.
+      operationId: listReviews
+      parameters:
+        - name: chefId
+          in: query
+          description: Фильтр по шефу (через путь Review → Booking → Slot → Chef)
+          schema:
+            type: string
+            format: uuid
+        - name: programId
+          in: query
+          description: Фильтр по программе
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Отзывы, от новых к старым
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ─────────────────────────── CHEF (свой кабинет) ───────────────────────────
+  /chef/slots:
+    get:
+      tags: [schedule]
+      summary: Мои классы (CHEF)
+      description: |
+        Расписание текущего шефа — предстоящие и прошедшие классы, вся история без
+        обрезания (Р-16). SCR-09, предусловие UC-06.
+      operationId: listChefSlots
+      parameters:
+        - name: period
+          in: query
+          description: Предстоящие или прошедшие классы; по умолчанию — все
+          schema:
+            type: string
+            enum: [UPCOMING, PAST]
+      responses:
+        '200':
+          description: Слоты шефа, отсортированы по времени начала
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SlotSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # ─────────────────────────── CHEFS (управление ADMIN) ───────────────────────────
+  /chefs:
+    get:
+      tags: [chefs]
+      summary: Список шефов (ADMIN)
+      description: SCR-16. Деактивации шефа в MVP нет — список только растёт (Р-15).
+      operationId: listChefs
+      responses:
+        '200':
+          description: Все шефы студии
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chef'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      tags: [chefs]
+      summary: Завести аккаунт шефа по email (ADMIN)
+      description: |
+        UC-08, ФТ-14, D-08: самостоятельной регистрации шефа нет. Создаётся
+        `User(role=CHEF)`; пароль не создаётся — первый вход через passwordless-код (UC-05).
+        Кейс «email уже занят клиентом» в MVP решается вручную другим email (Р-16) — здесь 409.
+      operationId: createChef
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChefCreateRequest'
+      responses:
+        '201':
+          description: Аккаунт шефа создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chef'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Пользователь с таким email уже существует
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /chefs/{chefId}:
+    parameters:
+      - name: chefId
+        in: path
+        required: true
+        description: Идентификатор шефа (User.id роли CHEF)
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags: [chefs]
+      summary: Редактировать фото и био шефа (ADMIN)
+      description: ФТ-25, Р-05 — профиль шефа (фото, био) ведёт администратор на экране «Шефы» (SCR-16); сам шеф свой профиль не редактирует. Агрегаты рейтинга через этот метод недоступны (ФТ-12 — только система).
+      operationId: updateChef
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChefUpdateRequest'
+      responses:
+        '200':
+          description: Профиль шефа обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chef'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─────────────────────────── STUDIO ───────────────────────────
+  /studio-settings:
+    get:
+      tags: [studio]
+      summary: Адрес и контакты студии
+      description: Синглтон (ФТ-17). Читают все, включая гостя — адрес показывает, где проходит класс.
+      operationId: getStudioSettings
+      security: []
+      responses:
+        '200':
+          description: Настройки студии
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioSettings'
+    put:
+      tags: [studio]
+      summary: Обновить настройки студии (ADMIN)
+      description: ФТ-17, US-12, SCR-17.
+      operationId: updateStudioSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudioSettings'
+      responses:
+        '200':
+          description: Настройки обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudioSettings'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+# ═══════════════════════════════ COMPONENTS ═══════════════════════════════
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Токен, выданный `POST /auth/code/verify` (UC-05). Пароли не используются ни для одной роли (БТ-06).
+
+  parameters:
+    programId:
+      name: programId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    slotId:
+      name: slotId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    bookingId:
+      name: bookingId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    Unauthorized:
+      description: Не аутентифицирован — требуется вход по email + коду (ФТ-13)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Операция недоступна текущей роли (матрица доступа ER-модели)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Некорректный запрос (лимиты текстов — Р-16; формат полей)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    # ── enums ──
+    UserRole:
+      type: string
+      enum: [CLIENT, CHEF, ADMIN]
+    DifficultyLevel:
+      type: string
+      enum: [BEGINNER, ADVANCED]
+    SlotStatus:
+      type: string
+      description: Жизненный цикл слота (ФТ-19); `COMPLETED` выставляет только система по `startAt + 180 мин` (D-09)
+      enum: [SCHEDULED, CANCELLED_BY_STUDIO, COMPLETED]
+    BookingStatus:
+      type: string
+      description: Жизненный цикл брони (ФТ-19); каждый актор меняет строго свой кусок (матрица доступа)
+      enum: [CONFIRMED, CANCELLED_BY_CLIENT, CANCELLED_BY_STUDIO, COMPLETED, NO_SHOW]
+    EquipmentChoice:
+      type: string
+      description: Своя экипировка или прокат (ФТ-06, БТ-07)
+      enum: [OWN, RENTAL]
+
+    # ── auth ──
+    AuthCodeRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: client@example.com
+    AuthCodeVerify:
+      type: object
+      required: [email, code]
+      properties:
+        email:
+          type: string
+          format: email
+        code:
+          type: string
+          description: Одноразовый шестизначный код из письма (EML-01)
+          pattern: '^[0-9]{6}$'
+          example: '482913'
+    AuthResult:
+      type: object
+      required: [accessToken, tokenType, isNewUser, user]
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        isNewUser:
+          type: boolean
+          description: true — аккаунт клиента только что создан молчаливо (ФТ-21); интерфейс запрашивает имя одним полем (Р-12)
+        user:
+          $ref: '#/components/schemas/CurrentUser'
+
+    # ── users / profiles ──
+    CurrentUser:
+      type: object
+      required: [id, role, email, enabled, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        role:
+          $ref: '#/components/schemas/UserRole'
+        name:
+          type: string
+          nullable: true
+          description: У нового клиента пусто до ответа на вопрос «Как к вам обращаться?» (Р-12)
+        email:
+          type: string
+          format: email
+          description: Логин и канал уведомлений; не редактируется (Р-16)
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        clientProfile:
+          allOf:
+            - $ref: '#/components/schemas/ClientProfile'
+          description: Присутствует только для role=CLIENT
+        chefProfile:
+          allOf:
+            - $ref: '#/components/schemas/ChefProfile'
+          description: Присутствует только для role=CHEF
+    ClientProfile:
+      type: object
+      required: [lateCancelCount]
+      properties:
+        allergyNote:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: Заметка об аллергии (ФТ-18); читает шеф в списке участников
+        lateCancelCount:
+          type: integer
+          description: Счётчик поздних отмен/неявок — «поздних отмен N из 3» (Р-06); меняет только система (D-02)
+          readOnly: true
+        blockedUntil:
+          type: string
+          format: date-time
+          nullable: true
+          description: Дата разблокировки при активном блоке (D-02); меняет только система
+          readOnly: true
+    ChefProfile:
+      type: object
+      properties:
+        photo:
+          type: string
+          nullable: true
+          description: URL фото; редактирует ADMIN (Р-05)
+        bio:
+          type: string
+          nullable: true
+          description: Редактирует ADMIN (Р-05)
+        averageRating:
+          type: number
+          format: double
+          nullable: true
+          description: Агрегат по Review.chefRating (ФТ-12); null, пока отзывов нет
+          readOnly: true
+        reviewsCount:
+          type: integer
+          description: Число отзывов (ФТ-12)
+          readOnly: true
+    UpdateMeRequest:
+      type: object
+      description: Хотя бы одно из полей
+      properties:
+        name:
+          type: string
+          maxLength: 100
+          description: Имя клиента — заполняется при первом входе (ФТ-21, Р-12)
+        allergyNote:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: ФТ-18; null очищает заметку
+
+    # ── chefs (admin) ──
+    ChefPublic:
+      type: object
+      description: Публичная карточка шефа в составе слота (SCR-04); публичен только агрегат рейтинга (Р-07)
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        photo:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        averageRating:
+          type: number
+          format: double
+          nullable: true
+        reviewsCount:
+          type: integer
+    Chef:
+      allOf:
+        - $ref: '#/components/schemas/ChefPublic'
+        - type: object
+          description: Представление для ADMIN (SCR-16)
+          required: [email, createdAt]
+          properties:
+            email:
+              type: string
+              format: email
+            createdAt:
+              type: string
+              format: date-time
+    ChefCreateRequest:
+      type: object
+      required: [email, name]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email для passwordless-входа шефа (ФТ-14, D-08)
+        name:
+          type: string
+          maxLength: 100
+        photo:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+    ChefUpdateRequest:
+      type: object
+      description: Р-05 — админ редактирует фото и био
+      properties:
+        photo:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+
+    # ── programs ──
+    Program:
+      type: object
+      required: [id, title, description, cuisineType, difficultyLevel, requiresComplexEquipment, dishes, photos]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        cuisineType:
+          type: string
+          description: Свободный текст с подсказками из уже использованных значений (рекомендация из design-decisions)
+        difficultyLevel:
+          $ref: '#/components/schemas/DifficultyLevel'
+        requiresComplexEquipment:
+          type: boolean
+          description: true — лимит группы 8 вместо 12 (ФТ-02); действует только на новые слоты (Р-04)
+        dishes:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          maxItems: 10
+          description: До 10 фото (Р-16)
+          items:
+            type: string
+            description: URL фото
+    ProgramInput:
+      type: object
+      required: [title, description, cuisineType, difficultyLevel, requiresComplexEquipment]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        cuisineType:
+          type: string
+        difficultyLevel:
+          $ref: '#/components/schemas/DifficultyLevel'
+        requiresComplexEquipment:
+          type: boolean
+        dishes:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+
+    # ── slots ──
+    SlotSummary:
+      type: object
+      description: Строка витрины расписания (SCR-03)
+      required: [id, programId, programTitle, chef, startAt, durationMinutes, capacityTotal, freeSpots, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        programId:
+          type: string
+          format: uuid
+        programTitle:
+          type: string
+        chef:
+          $ref: '#/components/schemas/ChefPublic'
+        startAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+          description: Фиксированно 180
+          example: 180
+        capacityTotal:
+          type: integer
+          description: 12 по умолчанию, 8 при сложном оборудовании (ФТ-02); зафиксирована при создании слота (Р-04)
+        freeSpots:
+          type: integer
+          description: Кэш, пересчитывается в транзакции брони (D-03); меняет только система
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/SlotStatus'
+        cancellationReason:
+          type: string
+          nullable: true
+          maxLength: 300
+          description: Заполнена только при `CANCELLED_BY_STUDIO` (ФТ-04); показывается клиенту в списке броней (ФТ-15, SCR-06)
+        rentalSetsAvailable:
+          type: integer
+          description: Остаток прокатных наборов
+        rentalPricePerSet:
+          type: number
+          format: double
+          description: Текущая цена проката; в брони фиксируется снапшотом (D-06)
+    SlotDetails:
+      allOf:
+        - $ref: '#/components/schemas/SlotSummary'
+        - type: object
+          description: Карточка слота (SCR-04)
+          required: [program]
+          properties:
+            program:
+              $ref: '#/components/schemas/Program'
+    SlotCreateRequest:
+      type: object
+      description: ФТ-03; длительность фиксированная (180 мин) и не передаётся
+      required: [programId, chefId, startAt, capacityTotal]
+      properties:
+        programId:
+          type: string
+          format: uuid
+        chefId:
+          type: string
+          format: uuid
+        startAt:
+          type: string
+          format: date-time
+        capacityTotal:
+          type: integer
+          minimum: 1
+          description: Не выше лимита программы — 12, либо 8 при сложном оборудовании (ФТ-02)
+        rentalSetsAvailable:
+          type: integer
+          minimum: 0
+          default: 0
+        rentalPricePerSet:
+          type: number
+          format: double
+          minimum: 0
+          description: Обязательна при rentalSetsAvailable > 0
+    SlotCancelRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 300
+          description: Обязательная причина отмены (ФТ-04, Р-16 — ≤ 300 символов); попадает в email клиентам (ФТ-15)
+
+    # ── bookings ──
+    BookingCreateRequest:
+      type: object
+      required: [slotId, equipmentChoice]
+      properties:
+        slotId:
+          type: string
+          format: uuid
+        equipmentChoice:
+          $ref: '#/components/schemas/EquipmentChoice'
+    Booking:
+      type: object
+      description: Бронь глазами клиента (SCR-05/06)
+      required: [id, slot, status, equipmentChoice, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        slot:
+          $ref: '#/components/schemas/SlotSummary'
+        status:
+          $ref: '#/components/schemas/BookingStatus'
+        equipmentChoice:
+          $ref: '#/components/schemas/EquipmentChoice'
+        rentalPriceSnapshot:
+          type: number
+          format: double
+          nullable: true
+          description: Цена проката, зафиксированная в момент брони (D-06/НФТ-07); null при OWN
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+        cancelledAt:
+          type: string
+          format: date-time
+          nullable: true
+        isLateCancellation:
+          type: boolean
+          nullable: true
+          description: Вычисляется системой при отмене — `slot.startAt − cancelledAt < 6ч` (D-01)
+          readOnly: true
+        hasReview:
+          type: boolean
+          description: Отзыв уже оставлен (D-05 — один отзыв на бронь)
+          readOnly: true
+    ParticipantBooking:
+      type: object
+      description: Бронь глазами шефа/админа — участник класса (SCR-10, SCR-13)
+      required: [id, clientName, status, equipmentChoice]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор брони
+        clientName:
+          type: string
+        allergyNote:
+          type: string
+          nullable: true
+          description: Заметка об аллергии участника (ФТ-18)
+        status:
+          $ref: '#/components/schemas/BookingStatus'
+        equipmentChoice:
+          $ref: '#/components/schemas/EquipmentChoice'
+
+    # ── reviews ──
+    ReviewCreateRequest:
+      type: object
+      required: [chefRating, programRating]
+      properties:
+        chefRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        programRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+          maxLength: 1000
+          description: Необязательный комментарий (≤ 1000 символов — Р-16); текст видит только ADMIN (Р-07)
+    Review:
+      type: object
+      required: [id, bookingId, chefRating, programRating, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        bookingId:
+          type: string
+          format: uuid
+        chefRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        programRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+          description: В ответах для клиента — его собственный комментарий; полный доступ к текстам — только ADMIN (Р-07)
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── studio ──
+    StudioSettings:
+      type: object
+      description: Синглтон (ФТ-17)
+      required: [address, contactPhone, contactEmail]
+      properties:
+        address:
+          type: string
+        contactPhone:
+          type: string
+        contactEmail:
+          type: string
+          format: email
+
+    # ── errors ──
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          description: Машиночитаемый код (например INVALID_CODE, SLOT_FULL, SLOT_JUST_TAKEN, SLOT_CANCELLED, CHEF_SLOT_OVERLAP, REVIEW_ALREADY_EXISTS)
+          example: SLOT_JUST_TAKEN
+        message:
+          type: string
+          description: Человекочитаемое сообщение для UI
+          example: Место только что заняли
+        details:
+          type: object
+          additionalProperties: true
+          description: Дополнительный контекст (conflictingSlotId, cancellationReason и т.п.)
+
+    BlockedError:
+      allOf:
+        - $ref: '#/components/schemas/Error'
+        - type: object
+          description: Отказ по активной блокировке клиента (D-02) — с датой разблокировки
+          required: [blockedUntil]
+          properties:
+            blockedUntil:
+              type: string
+              format: date-time
+
+security:
+  - bearerAuth: []

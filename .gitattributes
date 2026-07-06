@@ -2,5 +2,5 @@
 * text=auto eol=lf
 
 # Platform-specific overrides (must come after the default to win)
-/mvnw text eol=lf
+/backend/mvnw text eol=lf
 *.cmd text eol=crlf

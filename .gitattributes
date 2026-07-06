@@ -1,2 +1,6 @@
+# Normalize line endings to LF in the repo, check out LF on all platforms
+* text=auto eol=lf
+
+# Platform-specific overrides (must come after the default to win)
 /mvnw text eol=lf
 *.cmd text eol=crlf
